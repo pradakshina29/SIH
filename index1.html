@@ -1,0 +1,42 @@
+const { MongoClient } = require('mongodb');
+const QRCode = require('qrcode');
+
+// MongoDB connection string
+const uri = 'mongodb://localhost:27017'; // Or your MongoDB Atlas URI
+
+// Database and collection
+const dbName = 'my_database';
+const collectionName = 'links';
+
+async function generateQRCodeFromMongoDB() {
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    // Find the document with the specific name
+    const doc = await collection.findOne({ name: 'example_link' });
+
+    if (doc && doc.url) {
+      console.log('✅ Link retrieved:', doc.url);
+
+      // Generate QR Code and save to file
+      QRCode.toFile('qr_from_mongodb.png', doc.url, function (err) {
+        if (err) throw err;
+        console.log('✅ QR Code saved as qr_from_mongodb.png');
+      });
+
+    } else {
+      console.log('❌ Document not found or missing URL.');
+    }
+
+  } catch (err) {
+    console.error('❌ Error:', err);
+  } finally {
+    await client.close();
+  }
+}
+
+generateQRCodeFromMongoDB();
